@@ -5,11 +5,37 @@
 #include <winuser.h>
 #include <opencv2/opencv.hpp>
 #include <iostream>
+#include <tchar.h>
 
 using namespace cv;
 using namespace std;
 
+char LEFT_KEY = 'C';
+char RIGHT_KEY = 'M';
+const char gameWindowTitle[] = "Untitled - Notepad";
+
 int main(int argc, char* argv[]){
+    //setup inputs
+    //keep seperate for ease of keeping track
+    
+    //write a function that takes a char and presses down a key
+    INPUT LEFT_KEY_DOWN;
+    LEFT_KEY_DOWN.type = INPUT_KEYBOARD;
+    LEFT_KEY_DOWN.ki.wVk = LEFT_KEY;
+    INPUT RIGHT_KEY_DOWN;
+    RIGHT_KEY_DOWN.type = INPUT_KEYBOARD;
+    RIGHT_KEY_DOWN.ki.wVk = RIGHT_KEY;
+
+    INPUT LEFT_KEY_UP;
+    LEFT_KEY_DOWN.type = INPUT_KEYBOARD;
+    LEFT_KEY_DOWN.ki.wVk = LEFT_KEY;
+    LEFT_KEY_DOWN.ki.dwFlags = KEYEVENTF_KEYUP;
+
+    INPUT RIGHT_KEY_UP;
+    RIGHT_KEY_UP.type = INPUT_KEYBOARD;
+    RIGHT_KEY_UP.ki.wVk = RIGHT_KEY;
+    RIGHT_KEY_UP.ki.dwFlags = KEYEVENTF_KEYUP;
+
     //Open the default video camera
     /*VideoCapture cap(0);
     
@@ -27,34 +53,19 @@ int main(int argc, char* argv[]){
 
     string window_name = "My Camera Feed";
     namedWindow(window_name); //create a window called "My Camera Feed"
-    */HWND hActiveWindow = FindWindow(NULL, "Untitled - Notepad");
+    */HWND hActiveWindow = FindWindow(NULL, gameWindowTitle);
     cout << hActiveWindow << endl;
     SetForegroundWindow(hActiveWindow);
     SetFocus(hActiveWindow);
-    INPUT inputs[6] = {};
-    ZeroMemory(inputs, sizeof(inputs));
-    inputs[0].type = INPUT_KEYBOARD;
-    inputs[0].ki.wVk = 'B';
-    inputs[1].type = INPUT_KEYBOARD;
-    inputs[1].ki.wVk = 'B';
-    inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
-    inputs[2].type = INPUT_KEYBOARD;
-    inputs[2].ki.wVk = 'E';
-    inputs[3].type = INPUT_KEYBOARD;
-    inputs[3].ki.wVk = 'E';
-    inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
-    inputs[4].type = INPUT_KEYBOARD;
-    inputs[4].ki.wVk = 'N';
-    inputs[5].type = INPUT_KEYBOARD;
-    inputs[5].ki.wVk = 'N';
-    inputs[5].ki.dwFlags = KEYEVENTF_KEYUP;
-    for (int i = 0; i < 20; i++){
-        UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
-        if (uSent != ARRAYSIZE(inputs)){
+
+    //for (int i = 0; i < 20; i++){
+        UINT uSent = SendInput(1, &LEFT_KEY_DOWN, sizeof(LEFT_KEY_DOWN));
+        if (uSent != ARRAYSIZE(keyDown)){
             cout << ("SendInput failed: 0x%x\n", HRESULT_FROM_WIN32(GetLastError())) << endl;
         }
-    }
-
+    //}
+    Sleep (5000);
+    //UINT uSent1 = SendInput(ARRAYSIZE(keyUp), keyUp, sizeof(keyUp));
     /*while (true) {
         Mat frame;
         bool bSuccess = cap.read(frame); // read a new frame from video 
