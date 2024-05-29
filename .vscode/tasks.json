@@ -1,0 +1,72 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "g++.exe build active file",
+      "command": "C:\\mingw-w64\\x86_64-8.1.0-release-posix-seh-rt_v6-rev0\\mingw64\\bin\\g++.exe",
+      "args": [
+        "-g",
+        "${file}",
+        "-o",
+        "${fileDirname}\\${fileBasenameNoExtension}.exe",
+        "-I", "C:\\opencv\\OpenCV-MinGW-Build-OpenCV-4.1.1-x64\\include",
+        "-L", "C:\\opencv\\OpenCV-MinGW-Build-OpenCV-4.1.1-x64\\x64\\mingw\\lib",
+        "-lopencv_calib3d411",
+        "-lopencv_core411",
+        "-lopencv_dnn411",
+        "-lopencv_features2d411",
+        "-lopencv_flann411",
+        "-lopencv_gapi411",
+        "-lopencv_highgui411",
+        "-lopencv_imgcodecs411",
+        "-lopencv_imgproc411",
+        "-lopencv_ml411",
+        "-lopencv_objdetect411",
+        "-lopencv_photo411",
+        "-lopencv_stitching411",
+        "-lopencv_video411",
+        "-lopencv_videoio411",
+      ],
+      "options": {
+        "cwd": "C:\\mingw-w64\\x86_64-8.1.0-release-posix-seh-rt_v6-rev0\\mingw64\\bin\\"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Run executable",
+      "type": "shell",
+      "command": "${fileDirname}\\${fileBasenameNoExtension}.exe",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      }
+    },
+    {
+      "label": "Build and Run",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "g++.exe build active file",
+        "Run executable"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}
