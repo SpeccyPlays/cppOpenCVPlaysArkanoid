@@ -9,6 +9,9 @@ using namespace std;
 WORD LEFT_KEY = 'C';
 WORD RIGHT_KEY = 'M';
 const char gameWindowTitle[] = "Fuse";
+const string ballFileName = "./ball.png";
+const string paddleFileName = "./paddle.png";
+
 
 void pressKey(WORD &key){
     /*
@@ -79,9 +82,16 @@ Mat hwnd2mat(HWND hwnd){
 
 int main(int argc, char* argv[]){
 
-
+    //Load the templates and convert greyscale
+    Mat ball = imread(ballFileName, IMREAD_GRAYSCALE);
+    Mat paddle = imread(paddleFileName, IMREAD_GRAYSCALE);
+    if (ball.empty() || paddle.empty()){
+        cout << "Error reading template files" << endl;
+        return 0;
+    }
+    //prepare the windows and check game window is open
     string window_name = "OpenCV";
-    namedWindow(window_name); //create a window called "My Camera Feed"
+    namedWindow(window_name);
     HWND gameWindow = FindWindow(NULL, gameWindowTitle);
     if (!gameWindow){
         cout << "Game window not found" << endl;
@@ -92,17 +102,36 @@ int main(int argc, char* argv[]){
     }
     SetForegroundWindow(gameWindow);
     SetFocus(gameWindow );
-
-    for (int i = 0; i < 20; i++){
-        pressKey(LEFT_KEY);
-        pressKey(RIGHT_KEY);
-    }
     while (true) {
-        Mat frame  = hwnd2mat(gameWindow) ;
+        Mat frame  = hwnd2mat(gameWindow);
+        Mat greyFrame;
+        cvtColor(frame, greyFrame, COLOR_BGR2GRAY);
 
+        Mat ballResult;
+        ballResult.create(frame.rows - ball.rows + 1, frame.cols - ball.rows + 1, CV_32FC1);
+        matchTemplate(greyFrame, ball, ballResult, TM_CCOEFF_NORMED);
+        // Find the maximum value and its location in the result image
+        double max_val;
+        Point max_loc;
+        minMaxLoc(ballResult, NULL, &max_val, NULL, &max_loc);
+
+        // Draw a rectangle around the best match location on the source image
+        rectangle(frame, max_loc, cv::Point(max_loc.x + ball.cols, max_loc.y 
+        + ball.rows), cv::Scalar(255, 255, 255), 2);
+        
+        Mat paddleResult;
+        paddleResult.create(frame.rows - paddle.rows + 1, frame.cols - paddle.rows + 1, CV_32FC1);
+        matchTemplate(greyFrame, paddle, paddleResult, TM_CCOEFF_NORMED);
+        minMaxLoc(paddleResult, NULL, &max_val, NULL, &max_loc);
+
+        // Draw a rectangle around the best match location on the source image
+        rectangle(frame, max_loc, cv::Point(max_loc.x + paddle.cols, max_loc.y 
+        + paddle.rows), cv::Scalar(0, 255, 0), 2);
         
         //show the frame in the created window
         imshow(window_name, frame);
+        //pressKey(RIGHT_KEY);
+        
         
         //wait for for 10 ms until any key is pressed.  
         //If the 'Esc' key is pressed, break the while loop.
