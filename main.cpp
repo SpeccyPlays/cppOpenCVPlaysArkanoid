@@ -8,7 +8,7 @@ using namespace std;
 
 WORD LEFT_KEY = 'C';
 WORD RIGHT_KEY = 'M';
-const char gameWindowTitle[] = "Untitled - Notepad";
+const char gameWindowTitle[] = "Fuse";
 
 void pressKey(WORD &key){
     /*
@@ -23,30 +23,66 @@ void pressKey(WORD &key){
     }
 }
 
+Mat hwnd2mat(HWND hwnd){
+    /*
+    Creates a BMP in memory of the window handle provided
+    Copied from https://stackoverflow.com/questions/50395294/c-window-capture-output-isnt-the-same-size-as-said-window
+    */
+    HDC hwindowDC, hwindowCompatibleDC;
+
+    int height, width, srcheight, srcwidth;
+    HBITMAP hbwindow;
+    Mat src;
+    BITMAPINFOHEADER  bi;
+
+    hwindowDC = GetDC(hwnd);
+    hwindowCompatibleDC = CreateCompatibleDC(hwindowDC);
+    SetStretchBltMode(hwindowCompatibleDC, COLORONCOLOR);
+
+    RECT windowsize;    // get the height and width of the screen
+    GetClientRect(hwnd, &windowsize);
+
+    srcheight = windowsize.bottom;
+    srcwidth = windowsize.right;
+    height = windowsize.bottom / 1;  //change this to whatever size you want to resize to
+    width = windowsize.right / 1;
+
+    src.create(height, width, CV_8UC4);
+
+    // create a bitmap
+    hbwindow = CreateCompatibleBitmap(hwindowDC, width, height);
+    bi.biSize = sizeof(BITMAPINFOHEADER);    //http://msdn.microsoft.com/en-us/library/windows/window/dd183402%28v=vs.85%29.aspx
+    bi.biWidth = width;
+    bi.biHeight = -height;  //this is the line that makes it draw upside down or not
+    bi.biPlanes = 1;
+    bi.biBitCount = 32;
+    bi.biCompression = BI_RGB;
+    bi.biSizeImage = 0;
+    bi.biXPelsPerMeter = 0;
+    bi.biYPelsPerMeter = 0;
+    bi.biClrUsed = 0;
+    bi.biClrImportant = 0;
+
+    // use the previously created device context with the bitmap
+    SelectObject(hwindowCompatibleDC, hbwindow);
+    // copy from the window device context to the bitmap device context
+    StretchBlt(hwindowCompatibleDC, 0, 0, width, height, hwindowDC, 0, 0, srcwidth, srcheight, SRCCOPY); //change SRCCOPY to NOTSRCCOPY for wacky colors !
+    GetDIBits(hwindowCompatibleDC, hbwindow, 0, height, src.data, (BITMAPINFO *)&bi, DIB_RGB_COLORS);  //copy from hwindowCompatibleDC to hbwindow
+
+                                                                                                       // avoid memory leak
+    DeleteObject(hbwindow);
+    DeleteDC(hwindowCompatibleDC);
+    ReleaseDC(hwnd, hwindowDC);
+
+    return src;
+}
+
 int main(int argc, char* argv[]){
-    //setup inputs
-    //keep seperate for ease of keeping track
-    
-    //write a function that takes a char and presses down a key
 
-    //Open the default video camera
-    /*VideoCapture cap(0);
-    
-    // if not success, exit program
-    if (cap.isOpened() == false) {
-        cout << "Cannot open the video camera" << endl;
-        cin.get(); //wait for any key press
-        return -1;
-    } 
 
-    double dWidth = cap.get(CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
-    double dHeight = cap.get(CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
-
-    cout << "Resolution of the video : " << dWidth << " x " << dHeight << endl;
-
-    string window_name = "My Camera Feed";
+    string window_name = "OpenCV";
     namedWindow(window_name); //create a window called "My Camera Feed"
-    */HWND gameWindow = FindWindow(NULL, gameWindowTitle);
+    HWND gameWindow = FindWindow(NULL, gameWindowTitle);
     if (!gameWindow){
         cout << "Game window not found" << endl;
         return 0;
@@ -61,18 +97,10 @@ int main(int argc, char* argv[]){
         pressKey(LEFT_KEY);
         pressKey(RIGHT_KEY);
     }
-    Sleep (5000);
-    /*while (true) {
-        Mat frame;
-        bool bSuccess = cap.read(frame); // read a new frame from video 
+    while (true) {
+        Mat frame  = hwnd2mat(gameWindow) ;
 
-        //Breaking the while loop if the frames cannot be captured
-        if (bSuccess == false) {
-            cout << "Video camera is disconnected" << endl;
-            cin.get(); //Wait for any key press
-            break;
-        }
-
+        
         //show the frame in the created window
         imshow(window_name, frame);
         
@@ -81,9 +109,15 @@ int main(int argc, char* argv[]){
         //If the any other key is pressed, continue the loop 
         //If any key is not pressed withing 10 ms, continue the loop 
         if (waitKey(10) == 27){
-                cout << "Esc key is pressed by user. Stoppig the video" << endl;
-                break;
-            }
-    }*/
+            cout << "Esc key is pressed by user. Exiting program" << endl;
+            break;
+        }
+        //If the game window exists and exit if not
+        if (!IsWindow(gameWindow)){
+            cout << "Game window was closed. Exiting program" << endl;
+            break;
+        };
+    }
+    destroyAllWindows();
     return 0;
 }
