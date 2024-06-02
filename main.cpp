@@ -147,9 +147,11 @@ int main(int argc, char* argv[]){
     //store last key press
     
     while (true) {
-
-        
-        Mat frame  = hwnd2mat(gameWindow);
+   
+        Mat uncropped = hwnd2mat(gameWindow);
+        Rect roi(80, 60, 370, 400);
+            // Crop the frame
+        Mat frame = uncropped(roi);
         Mat greyFrame;
         cvtColor(frame, greyFrame, COLOR_BGR2GRAY);
 
@@ -170,21 +172,21 @@ int main(int argc, char* argv[]){
         }
         //if the ball is between the paddle center and one of it's sides then let go of the key so we don't overshoot too much
 
-        if ((predictedBallLoc.x < (paddleLoc.x - (paddle.rows / 2)) && (predictedBallLoc.x > paddleLoc.x))){
+        if (predictedBallLoc.x < (paddleLoc.x - (paddle.rows / 3)) && predictedBallLoc.x > paddleLoc.x){
             releaseKey(lastKeyPress);
             lastKeyPress = LEFT_KEY;
         }
-        else if ((predictedBallLoc.x > paddleLoc.x) && (predictedBallLoc.x < (paddleLoc.x + (paddle.rows / 2)))){
+        else if (predictedBallLoc.x > paddleLoc.x && predictedBallLoc.x < paddleLoc.x + (paddle.rows / 3)){
             releaseKey(lastKeyPress);
             lastKeyPress = RIGHT_KEY;
         }
-        else if (predictedBallLoc.x < paddleLoc.x) {
+        if (predictedBallLoc.x < paddleLoc.x) {
             if (lastKeyPress != LEFT_KEY){
                 releaseKey(lastKeyPress);
                 lastKeyPress = LEFT_KEY;
             }
         }
-        else if (predictedBallLoc.x > paddleLoc.x) {
+        if (predictedBallLoc.x > paddleLoc.x) {
             if (lastKeyPress != RIGHT_KEY){
                 releaseKey(lastKeyPress);
                 lastKeyPress = RIGHT_KEY;
@@ -192,7 +194,7 @@ int main(int argc, char* argv[]){
         }
         
         pressKey(lastKeyPress);
-        putText(frame, "Pressd key " + to_string(lastKeyPress), Point(10, 45), FONT_HERSHEY_PLAIN, 1.0, CWHITE);
+        putText(frame, "Pressed key " + to_string(lastKeyPress), Point(10, 45), FONT_HERSHEY_PLAIN, 1.0, CWHITE);
         //add values to the frame for troubleshooting.
         putText(frame, "Paddle x : " + to_string(paddleLoc.x), text1Loc, textFont, textScale, textColor);
         putText(frame, "Ball x : " + to_string(ballLoc.x) + " Predicted ball x : " + to_string(predictedBallLoc.x), text2Loc, textFont, textScale, textColor);
