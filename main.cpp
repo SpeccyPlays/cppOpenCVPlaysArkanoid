@@ -7,11 +7,12 @@ using namespace cv;
 using namespace std;
 
 
-const char gameWindowTitle[] = "Fuse";
+char gameWindowTitle[] = "Fuse";
 const string ballFileName = "./ball.png";
 const string paddleFileName = "./paddle.png";
 WORD LEFT_KEY = 'C';
 WORD RIGHT_KEY = 'M';
+WORD lastKeyPress = '0';
 const Scalar CWHITE(255, 255, 255);
 const Scalar CGREEN(0, 255, 0);
 
@@ -24,7 +25,20 @@ void pressKey(WORD &key){
     iKey.ki.wVk = key;
     UINT uSent = SendInput(1, &iKey, sizeof(iKey));
     if (uSent != 1){
-        cout << ("SendInput failed") << endl;
+         cout << "Failed to send input" << endl;
+    }
+};
+void releaseKey(WORD &key){
+    /*
+    Release a key press via SendInput. Uses scan code
+    */
+    INPUT iKey;
+    iKey.type = INPUT_KEYBOARD;
+    iKey.ki.wVk = key;
+    iKey.ki.dwFlags = KEYEVENTF_KEYUP;
+    UINT uSent = SendInput(1, &iKey, sizeof(iKey));
+    if (uSent != 1){
+         cout << "Failed to send input" << endl;
     }
 };
 
@@ -84,7 +98,7 @@ Mat hwnd2mat(HWND hwnd){
 Point templateDetection(Mat &src, Mat &greyedSrc, Mat &templateMat, Scalar boxColor){
     /*
     Detects templace passed and draws a rectangle around it on source image
-    We want to return the x center of the passed template
+    We want to return the center of the passed template
     */
     Mat result;
     result.create(src.rows - templateMat.rows + 1, src.cols - templateMat.cols + 1, CV_32FC1);
@@ -94,6 +108,7 @@ Point templateDetection(Mat &src, Mat &greyedSrc, Mat &templateMat, Scalar boxCo
     minMaxLoc(result, NULL, &maxVal, NULL, &maxLoc);
     rectangle(src, maxLoc, Point(maxLoc.x + templateMat.cols, maxLoc.y + templateMat.rows), boxColor, 2);
     maxLoc.x = maxLoc.x + (templateMat.cols / 2 );
+    maxLoc.y = maxLoc.y + (templateMat.rows / 2 );
     return maxLoc;
 };
 int main(int argc, char* argv[]){
@@ -106,6 +121,7 @@ int main(int argc, char* argv[]){
         return 0;
     }
     //prepare the windows and check game window is open
+    //switch to it if open
     string window_name = "OpenCV";
     namedWindow(window_name);
     HWND gameWindow = FindWindow(NULL, gameWindowTitle);
@@ -122,12 +138,14 @@ int main(int argc, char* argv[]){
     int textFont = FONT_HERSHEY_PLAIN;
     double textScale = 1.0;
     Scalar textColor(CWHITE);
-    Point text1Loc(10, 10);
-    Point text2Loc(10, 20);
-    Point text3Loc(10, 30);
+    Point text1Loc(10, 15);
+    Point text2Loc(10, 30);
+    Point text3Loc(10, 45);
     //setup for keeping track of previous ball locations
     Point oldBallLoc(0,0);
-   
+    Point predictedBallLoc(0, 0);
+    //store last key press
+    
     while (true) {
 
         
@@ -137,14 +155,35 @@ int main(int argc, char* argv[]){
 
         Point ballLoc = templateDetection(frame, greyFrame, ball, CWHITE);
         Point paddleLoc = templateDetection(frame, greyFrame, paddle, CGREEN);
-
-        putText(frame, "Ball x : " + to_string(ballLoc.x), text1Loc, textFont, textScale, textColor);
-        putText(frame, "Paddle x : " + to_string(paddleLoc.x), text2Loc, textFont, textScale, textColor);
-        //show the frame in the created window
+        Point diff = ballLoc - oldBallLoc;
+        //if there's a massive difference then it's probably a false positive on the template match so do nothing
+        if (abs(diff.x) < 60 || abs(diff.y) < 60){
+             predictedBallLoc = ballLoc + (diff * 2);
+        }
+       
+        if (paddleLoc.x > predictedBallLoc.x) {
+            if (lastKeyPress != LEFT_KEY){
+                releaseKey(lastKeyPress);
+                lastKeyPress = LEFT_KEY;
+            }
+        }
+        if (paddleLoc.x < predictedBallLoc.x) {
+            if (lastKeyPress != RIGHT_KEY){
+                releaseKey(lastKeyPress);
+                lastKeyPress = RIGHT_KEY;
+            }
+        }
+        putText(frame, "Pressd key " + to_string(lastKeyPress), Point(10, 45), FONT_HERSHEY_PLAIN, 1.0, CWHITE);
+        pressKey(lastKeyPress);
+        oldBallLoc = ballLoc;
+        putText(frame, "Paddle x : " + to_string(paddleLoc.x), text1Loc, textFont, textScale, textColor);
+        putText(frame, "Ball x : " + to_string(ballLoc.x) + " Predicted ball x : " + to_string(predictedBallLoc.x), text2Loc, textFont, textScale, textColor);
+        circle(frame, predictedBallLoc, 5, CWHITE, 2);
+       
+        
+        //pressKey(frame, lastKeyPress);
+        
         imshow(window_name, frame);
-        //pressKey(RIGHT_KEY);
-        
-        
         //wait for for 10 ms until any key is pressed.  
         //If the 'Esc' key is pressed, break the while loop.
         //If the any other key is pressed, continue the loop 
@@ -158,6 +197,9 @@ int main(int argc, char* argv[]){
             cout << "Game window was closed. Exiting program" << endl;
             break;
         };
+                //show the frame in the created window
+        
+        oldBallLoc = ballLoc;
     }
     destroyAllWindows();
     return 0;
