@@ -24,7 +24,7 @@ void pressKey(WORD &key){
     if (uSent != 1){
         cout << ("SendInput failed") << endl;
     }
-}
+};
 
 Mat hwnd2mat(HWND hwnd){
     /*
@@ -78,8 +78,20 @@ Mat hwnd2mat(HWND hwnd){
     ReleaseDC(hwnd, hwindowDC);
 
     return src;
-}
-
+};
+Point templateDetection(Mat &src, Mat &greyedSrc, Mat &templateMat, Scalar boxColor){
+    /*
+    Detects templace passed and draws a rectangle around it on source image
+    */
+    Mat result;
+    result.create(src.rows - templateMat.rows + 1, src.cols - templateMat.cols + 1, CV_32FC1);
+    matchTemplate(greyedSrc, templateMat, result, TM_CCOEFF_NORMED);
+    double max_val;
+    Point max_loc;
+    minMaxLoc(result, NULL, &max_val, NULL, &max_loc);
+    rectangle(src, max_loc, Point(max_loc.x + templateMat.cols, max_loc.y + templateMat.rows), boxColor, 2);
+    return max_loc;
+};
 int main(int argc, char* argv[]){
 
     //Load the templates and convert greyscale
@@ -113,22 +125,18 @@ int main(int argc, char* argv[]){
     Point oldBallLoc(0,0);
    
     while (true) {
+
         
         Mat frame  = hwnd2mat(gameWindow);
         Mat greyFrame;
         cvtColor(frame, greyFrame, COLOR_BGR2GRAY);
 
-        Mat ballResult;
-        ballResult.create(frame.rows - ball.rows + 1, frame.cols - ball.rows + 1, CV_32FC1);
-        matchTemplate(greyFrame, ball, ballResult, TM_CCOEFF_NORMED);
+        templateDetection(frame, greyFrame, ball, Scalar(255,255,255));
+        
+
         // Find the maximum value and its location in the result image
         double max_val;
         Point max_loc;
-        minMaxLoc(ballResult, NULL, &max_val, NULL, &max_loc);
-
-        // Draw a rectangle around the best match location on the source image
-        rectangle(frame, max_loc, Point(max_loc.x + ball.cols, max_loc.y + ball.rows), Scalar(255, 255, 255), 2);
-        
         Mat paddleResult;
         paddleResult.create(frame.rows - paddle.rows + 1, frame.cols - paddle.rows + 1, CV_32FC1);
         matchTemplate(greyFrame, paddle, paddleResult, TM_CCOEFF_NORMED);
