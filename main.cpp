@@ -217,6 +217,8 @@ int main(int argc, char* argv[]){
             break;
         };
     }
+    releaseKey(LEFT_KEY);
+    releaseKey(RIGHT_KEY);
     destroyAllWindows();
     return 0;
 }
