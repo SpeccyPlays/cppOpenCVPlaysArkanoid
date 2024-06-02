@@ -6,12 +6,14 @@
 using namespace cv;
 using namespace std;
 
-WORD LEFT_KEY = 'C';
-WORD RIGHT_KEY = 'M';
+
 const char gameWindowTitle[] = "Fuse";
 const string ballFileName = "./ball.png";
 const string paddleFileName = "./paddle.png";
-
+WORD LEFT_KEY = 'C';
+WORD RIGHT_KEY = 'M';
+const Scalar CWHITE(255, 255, 255);
+const Scalar CGREEN(0, 255, 0);
 
 void pressKey(WORD &key){
     /*
@@ -82,15 +84,17 @@ Mat hwnd2mat(HWND hwnd){
 Point templateDetection(Mat &src, Mat &greyedSrc, Mat &templateMat, Scalar boxColor){
     /*
     Detects templace passed and draws a rectangle around it on source image
+    We want to return the x center of the passed template
     */
     Mat result;
     result.create(src.rows - templateMat.rows + 1, src.cols - templateMat.cols + 1, CV_32FC1);
     matchTemplate(greyedSrc, templateMat, result, TM_CCOEFF_NORMED);
-    double max_val;
-    Point max_loc;
-    minMaxLoc(result, NULL, &max_val, NULL, &max_loc);
-    rectangle(src, max_loc, Point(max_loc.x + templateMat.cols, max_loc.y + templateMat.rows), boxColor, 2);
-    return max_loc;
+    double maxVal;
+    Point maxLoc;
+    minMaxLoc(result, NULL, &maxVal, NULL, &maxLoc);
+    rectangle(src, maxLoc, Point(maxLoc.x + templateMat.cols, maxLoc.y + templateMat.rows), boxColor, 2);
+    maxLoc.x = maxLoc.x + (templateMat.cols / 2 );
+    return maxLoc;
 };
 int main(int argc, char* argv[]){
 
@@ -117,7 +121,7 @@ int main(int argc, char* argv[]){
     //setup for drawing text values on the screen
     int textFont = FONT_HERSHEY_PLAIN;
     double textScale = 1.0;
-    Scalar textColor(255, 255, 255);
+    Scalar textColor(CWHITE);
     Point text1Loc(10, 10);
     Point text2Loc(10, 20);
     Point text3Loc(10, 30);
@@ -131,21 +135,11 @@ int main(int argc, char* argv[]){
         Mat greyFrame;
         cvtColor(frame, greyFrame, COLOR_BGR2GRAY);
 
-        templateDetection(frame, greyFrame, ball, Scalar(255,255,255));
-        
+        Point ballLoc = templateDetection(frame, greyFrame, ball, CWHITE);
+        Point paddleLoc = templateDetection(frame, greyFrame, paddle, CGREEN);
 
-        // Find the maximum value and its location in the result image
-        double max_val;
-        Point max_loc;
-        Mat paddleResult;
-        paddleResult.create(frame.rows - paddle.rows + 1, frame.cols - paddle.rows + 1, CV_32FC1);
-        matchTemplate(greyFrame, paddle, paddleResult, TM_CCOEFF_NORMED);
-        minMaxLoc(paddleResult, NULL, &max_val, NULL, &max_loc);
-
-        // Draw a rectangle around the best match location on the source image
-        rectangle(frame, max_loc, Point(max_loc.x + paddle.cols, max_loc.y + paddle.rows), Scalar(0, 255, 0), 2);
-        
-        putText(frame, "Paddle x : " + to_string(max_loc.x), text1Loc, textFont, textScale, textColor);
+        putText(frame, "Ball x : " + to_string(ballLoc.x), text1Loc, textFont, textScale, textColor);
+        putText(frame, "Paddle x : " + to_string(paddleLoc.x), text2Loc, textFont, textScale, textColor);
         //show the frame in the created window
         imshow(window_name, frame);
         //pressKey(RIGHT_KEY);
