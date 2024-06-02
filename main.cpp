@@ -102,7 +102,18 @@ int main(int argc, char* argv[]){
     }
     SetForegroundWindow(gameWindow);
     SetFocus(gameWindow );
+    //setup for drawing text values on the screen
+    int textFont = FONT_HERSHEY_PLAIN;
+    double textScale = 1.0;
+    Scalar textColor(255, 255, 255);
+    Point text1Loc(10, 10);
+    Point text2Loc(10, 20);
+    Point text3Loc(10, 30);
+    //setup for keeping track of previous ball locations
+    Point oldBallLoc(0,0);
+   
     while (true) {
+        
         Mat frame  = hwnd2mat(gameWindow);
         Mat greyFrame;
         cvtColor(frame, greyFrame, COLOR_BGR2GRAY);
@@ -116,8 +127,7 @@ int main(int argc, char* argv[]){
         minMaxLoc(ballResult, NULL, &max_val, NULL, &max_loc);
 
         // Draw a rectangle around the best match location on the source image
-        rectangle(frame, max_loc, cv::Point(max_loc.x + ball.cols, max_loc.y 
-        + ball.rows), cv::Scalar(255, 255, 255), 2);
+        rectangle(frame, max_loc, Point(max_loc.x + ball.cols, max_loc.y + ball.rows), Scalar(255, 255, 255), 2);
         
         Mat paddleResult;
         paddleResult.create(frame.rows - paddle.rows + 1, frame.cols - paddle.rows + 1, CV_32FC1);
@@ -125,9 +135,9 @@ int main(int argc, char* argv[]){
         minMaxLoc(paddleResult, NULL, &max_val, NULL, &max_loc);
 
         // Draw a rectangle around the best match location on the source image
-        rectangle(frame, max_loc, cv::Point(max_loc.x + paddle.cols, max_loc.y 
-        + paddle.rows), cv::Scalar(0, 255, 0), 2);
+        rectangle(frame, max_loc, Point(max_loc.x + paddle.cols, max_loc.y + paddle.rows), Scalar(0, 255, 0), 2);
         
+        putText(frame, "Paddle x : " + to_string(max_loc.x), text1Loc, textFont, textScale, textColor);
         //show the frame in the created window
         imshow(window_name, frame);
         //pressKey(RIGHT_KEY);
