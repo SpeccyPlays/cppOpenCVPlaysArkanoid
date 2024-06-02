@@ -157,17 +157,28 @@ int main(int argc, char* argv[]){
         Point paddleLoc = templateDetection(frame, greyFrame, paddle, CGREEN);
         Point diff = ballLoc - oldBallLoc;
         //if there's a massive difference then it's probably a false positive on the template match so do nothing
-        if (abs(diff.x) < 60 || abs(diff.y) < 60){
-             predictedBallLoc = ballLoc + (diff * 2);
+        if (abs(diff.x) < 40 || abs(diff.y) < 40){
+             predictedBallLoc = ballLoc + (diff * 3);
+             oldBallLoc = ballLoc;
         }
-       
-        if (paddleLoc.x > predictedBallLoc.x) {
+        else {
+            predictedBallLoc = oldBallLoc;
+        }
+        //move to paddle level if 
+        if (predictedBallLoc.y > paddleLoc.y){
+            predictedBallLoc.y = paddleLoc.y;
+        }
+        //if the ball is between the paddle center and one of it's sides then let go of the key so we don't overshoot
+        if ((paddleLoc.x + (paddle.rows / 2) < predictedBallLoc.x && paddleLoc.x > predictedBallLoc.x) || (paddleLoc.x - (paddle.rows / 2) > predictedBallLoc.x && paddleLoc.x < predictedBallLoc.x)){
+            releaseKey(lastKeyPress);
+        }
+        else if (paddleLoc.x > predictedBallLoc.x) {
             if (lastKeyPress != LEFT_KEY){
                 releaseKey(lastKeyPress);
                 lastKeyPress = LEFT_KEY;
             }
         }
-        if (paddleLoc.x < predictedBallLoc.x) {
+        else if (paddleLoc.x < predictedBallLoc.x) {
             if (lastKeyPress != RIGHT_KEY){
                 releaseKey(lastKeyPress);
                 lastKeyPress = RIGHT_KEY;
@@ -175,7 +186,7 @@ int main(int argc, char* argv[]){
         }
         putText(frame, "Pressd key " + to_string(lastKeyPress), Point(10, 45), FONT_HERSHEY_PLAIN, 1.0, CWHITE);
         pressKey(lastKeyPress);
-        oldBallLoc = ballLoc;
+        
         putText(frame, "Paddle x : " + to_string(paddleLoc.x), text1Loc, textFont, textScale, textColor);
         putText(frame, "Ball x : " + to_string(ballLoc.x) + " Predicted ball x : " + to_string(predictedBallLoc.x), text2Loc, textFont, textScale, textColor);
         circle(frame, predictedBallLoc, 5, CWHITE, 2);
