@@ -157,43 +157,49 @@ int main(int argc, char* argv[]){
         Point paddleLoc = templateDetection(frame, greyFrame, paddle, CGREEN);
         Point diff = ballLoc - oldBallLoc;
         //if there's a massive difference then it's probably a false positive on the template match so do nothing
-        if (abs(diff.x) < 40 || abs(diff.y) < 40){
-             predictedBallLoc = ballLoc + (diff * 3);
+        if (abs(diff.x) < 60 || abs(diff.y) < 60){
+             predictedBallLoc = ballLoc + (diff * 2);
              oldBallLoc = ballLoc;
         }
         else {
             predictedBallLoc = oldBallLoc;
         }
-        //move to paddle level if 
+        //move predicted to paddle level if it's under the paddle
         if (predictedBallLoc.y > paddleLoc.y){
             predictedBallLoc.y = paddleLoc.y;
         }
-        //if the ball is between the paddle center and one of it's sides then let go of the key so we don't overshoot
-        if ((paddleLoc.x + (paddle.rows / 2) < predictedBallLoc.x && paddleLoc.x > predictedBallLoc.x) || (paddleLoc.x - (paddle.rows / 2) > predictedBallLoc.x && paddleLoc.x < predictedBallLoc.x)){
+        //if the ball is between the paddle center and one of it's sides then let go of the key so we don't overshoot too much
+
+        if ((predictedBallLoc.x < (paddleLoc.x - (paddle.rows / 2)) && (predictedBallLoc.x > paddleLoc.x))){
             releaseKey(lastKeyPress);
+            lastKeyPress = LEFT_KEY;
         }
-        else if (paddleLoc.x > predictedBallLoc.x) {
+        else if ((predictedBallLoc.x > paddleLoc.x) && (predictedBallLoc.x < (paddleLoc.x + (paddle.rows / 2)))){
+            releaseKey(lastKeyPress);
+            lastKeyPress = RIGHT_KEY;
+        }
+        else if (predictedBallLoc.x < paddleLoc.x) {
             if (lastKeyPress != LEFT_KEY){
                 releaseKey(lastKeyPress);
                 lastKeyPress = LEFT_KEY;
             }
         }
-        else if (paddleLoc.x < predictedBallLoc.x) {
+        else if (predictedBallLoc.x > paddleLoc.x) {
             if (lastKeyPress != RIGHT_KEY){
                 releaseKey(lastKeyPress);
                 lastKeyPress = RIGHT_KEY;
             }
         }
-        putText(frame, "Pressd key " + to_string(lastKeyPress), Point(10, 45), FONT_HERSHEY_PLAIN, 1.0, CWHITE);
-        pressKey(lastKeyPress);
         
+        pressKey(lastKeyPress);
+        putText(frame, "Pressd key " + to_string(lastKeyPress), Point(10, 45), FONT_HERSHEY_PLAIN, 1.0, CWHITE);
+        //add values to the frame for troubleshooting.
         putText(frame, "Paddle x : " + to_string(paddleLoc.x), text1Loc, textFont, textScale, textColor);
         putText(frame, "Ball x : " + to_string(ballLoc.x) + " Predicted ball x : " + to_string(predictedBallLoc.x), text2Loc, textFont, textScale, textColor);
         circle(frame, predictedBallLoc, 5, CWHITE, 2);
-       
-        
-        //pressKey(frame, lastKeyPress);
-        
+
+        //show the frame
+
         imshow(window_name, frame);
         //wait for for 10 ms until any key is pressed.  
         //If the 'Esc' key is pressed, break the while loop.
@@ -208,9 +214,6 @@ int main(int argc, char* argv[]){
             cout << "Game window was closed. Exiting program" << endl;
             break;
         };
-                //show the frame in the created window
-        
-        oldBallLoc = ballLoc;
     }
     destroyAllWindows();
     return 0;
